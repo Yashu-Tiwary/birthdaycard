@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Birthday Book Card</title>
+<style>
+/* ================= GLOBAL ================= */
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg,#ff9a9e,#fad0c4);
+    font-family: 'Cambria', sans-serif;
+    overflow: hidden;
+    perspective: 2500px;
+    position: relative;
+}
+
+/* ================= CONFETTI ================= */
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    top: -10px;
+    opacity: 0.8;
+    pointer-events: none;
+    animation: fall linear infinite;
+    z-index: 0;
+}
+
+@keyframes fall {
+    to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+/* ================= STAR EFFECT ================= */
+.star {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: gold;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: twinkle 1.5s ease-in-out infinite alternate;
+    opacity: 0;
+    z-index: 1;
+}
+
+@keyframes twinkle {
+    0%,100% { opacity: 0; transform: scale(0.5) rotate(0deg);}
+    50% { opacity: 1; transform: scale(1) rotate(180deg);}
+}
+
+/* ================= FLOATING CAKE ================= */
+@keyframes floatCake {0%,100%{transform:translateY(0);}50%{transform:translateY(-15px);}}
+
+/* ================= BOOK WRAPPER ================= */
+.book-wrapper {
+    width: 900px;   /* Increased size */
+    height: 600px;  /* Increased size */
+    position: relative;
+    z-index: 10;
+}
+
+/* ================= BOOK ================= */
+.book {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+/* ================= COVER ================= */
+.cover {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg,#ff4b6e,#ff758c);
+    color: white;
+    border-radius: 14px;
+    transform-origin: left;
+    transition: transform 1s ease;
+    z-index: 10;
+    cursor: pointer;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.book.open .cover {
+    transform: rotateY(-180deg);
+}
+
+.cover h1 { font-size: 48px; margin-top: 60px; text-align:center;}
+.cover p { font-size: 20px; text-align:center;}
+.cover img { width: 200px; margin-top:20px; border-radius:10px; animation: floatCake 3s ease-in-out infinite; }
+
+/* ================= SPREAD ================= */
+.spread {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: left;
+    transform-style: preserve-3d;
+    transition: transform 1s ease;
+    display: flex;
+    backface-visibility: hidden;
+    z-index: 5;
+}
+
+/* Left & Right pages */
+.left-page, .right-page {
+    width: 50%;
+    padding: 21px;  
+    overflow-y: auto;
+}
+
+.left-page { background:white;
+    font-size: 18px;
+    line-height: 1.6;
+ }
+.right-page {
+    background:#f7f7f7;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    grid-template-rows:repeat(2,1fr);
+    grid-gap:15px; 
+    justify-items:center;
+    align-items:center;
+}
+
+/* ================= IMAGE BORDER ================= */
+.right-page img { 
+    width:100%; 
+    aspect-ratio:1/1; 
+    border-radius:10px; 
+    object-fit:cover; 
+    border: 2px solid black; 
+}
+
+/* ================= LEFT PAGE IMAGE GRID ================= */
+.left-page-images {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.left-page-images img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid black;
+}
+
+/* ================= CONTROLS ================= */
+.controls {
+    position: absolute;
+    bottom: 10px; 
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;                 
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.book.open .controls {
+    opacity:1;
+    pointer-events:auto;
+}
+
+.controls button {
+    padding:6px 12px; 
+    font-size:13px;   
+    border:none;
+    border-radius:15px;
+    background:#ff4b6e;
+    color:white;
+    cursor:pointer;
+    box-shadow:0 3px 8px rgba(0,0,0,0.2);
+}
+
+.controls button:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* ================= MOBILE ================= */
+@media(max-width:768px){
+    .book-wrapper { width:95vw; height:70vh; }
+    .spread { flex-direction:column; }
+    .left-page, .right-page { width:100%; height:50%; }
+    .cover h1 { font-size:36px; margin-top:50px; }
+    .cover img{ width:140px; }
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE TURN SOUND -->
+<audio id="pageSound" src="audio/page-flip-47177.mp3"></audio>
+<!-- BACKGROUND MUSIC -->
+<audio id="bgMusic" src="audio/HER (ft. Annika Wells).mp3" loop></audio>
+
+<!-- CONFETTI -->
+<div id="confettiContainer"></div>
+
+<div class="book-wrapper">
+<div class="book" id="book">
+
+    <!-- COVER -->
+    <div class="cover" id="cover" onclick="openBook()">
+        <h1>🎊 Happy Birthday Khushi 🎊</h1>
+        <p>My Someone Special ✨</p>
+        <p>Tap to open 💖</p>
+        <img src="./images/cake.jpeg" alt="Birthday Cake">
+    </div>
+
+    <!-- SPREADS -->
+    <div class="spreads">
+        <!-- Spread 1 -->
+        <div class="spread active">
+            <div class="left-page">
+                <h2>Dear You 💕</h2>
+                <p> Hi mera golgappa 🥰, ye message bus tumhare liye... </p> 
+                <p> Tum mere liye bahot special ho 💖. Jabse tum mere life me aayi... Tabse lekar aaj tak hum sirf khush huye hai 🍀. </p>
+                <p> Tum jo meri itni bakbak sunti ho, tum jo humko itna samjhti ho aur humse jhagad ke bhi mere saath rehti ho uske liye Thank You 😊❤️.</p>
+                <p> Meri Honey Bun Sugar Plum ❣️, Meri Coco ❤️, Meri Puchki ✨ aur Meri Cutiepie 🍀🤗... </p> 
+                <p>I love you 💗♾️✨</p>
+                <p>You complete me 🤗💗</p>
+            </div>
+            <div class="right-page">
+                <img src="./images/dear1.jpg">
+                <img src="./images/dear4.jpg">
+                <img src="./images/dear3.jpg">
+                <img src="./images/dear2.jpg">
+            </div>
+        </div>
+
+        <!-- Spread 2 -->
+        <div class="spread">
+            <div class="left-page">
+                <h2>Memories 🌸</h2>
+                <p>Tumhare saath jo moments aur time hum spend kiye wo mere liye bahot special hai ✨.</p>
+                <p>Tumhare saath beeta hua har pal mere liye bahot khaas hai 💖♾️.</p>
+                <p>Tum mere har khushi ki sabse pyaari wajah ho 🤗.</p>
+                <p>Tumhare saath hum jo bhi memories bitaye wo mere dil ke humesha paas rahega 🥰.</p>
+                <p>Isme hum wo sari memories toh nahi daal sakte...</p>
+                <p>Lekin meri nazar se jo sabse khoobsurat pal hai jo zarur dikha sakte. </p>
+            </div>
+            <div class="right-page">
+                 <img src="./images/love1.jpg">
+                 <img src="./images/love4.jpg">
+                 <img src="./images/love3.jpg">
+                 <img src="./images/love2.jpg">
+            </div>
+        </div>
+
+        <!-- Spread 3 -->
+        <div class="spread">
+            <div class="left-page">
+                <h2>Best Wishes ✨</h2>
+                <p>Bhagwan tumko humesha khush rakhe, tumhara humesha dhyaan rakhe aur tumhara sara wish pura kare ❤️.</p>
+                <p>Hum humesha tumhare liye bhagwan se pray karenge ki tumhare chehre ki muskaan humesha banaye rakhe 😇.</p>
+                <p>Bhagwan kare tumhare aanko mein kabhi aansu na aaye meri Khushi 🤗.</p>
+                <p>Bhagwan mere hisse ki saari khushi bhi tumko dede kyuki hum kahe the na, tum khush dekh kar hum humesha happy rehte hai 🥰.</p>
+                <p>Iske next page me wo moments hai jo hum dono saath me spend kiye 😊.</p>
+            </div>
+            <div class="right-page">
+                    <img src="./images/best1.jpg">
+                    <img src="./images/best4.jpg">
+                    <img src="./images/best3.jpg">
+                    <img src="./images/best2.jpg">
+            </div>
+        </div>
+
+        <!-- Spread 4 -->
+        <div class="spread">
+            <div class="left-page">
+                <h2>The Moments</h2> 
+                <h2>We Spent Together ❣️🎉</h2>
+                <p>Khushi agar kuch lines me inn palo ko samjhana ho toh hum kehna chahenge,</p>
+                <p> Arz kiya hai...</p>
+                <p>Humne bhi likha kuch tere baare mein hai ✍️...</p>
+                <p>Haathon ko sambhale mere haathon mein 🫳,</p>
+                <p>Kaise haathon ko sambhale mere haathon mein 🫴.</p>
+                <p>Jab tak neend na aaye in lakeeron me, </p>
+                <p>Baatein ho, hayee 💖... </p>
+
+            </div>
+            <div class="right-page">
+                 <img src="./images/mem1.jpg">
+                 <img src="./images/mem4.jpg">
+                 <img src="./images/mem3.jpg">
+                 <img src="./images/mem2.jpg">
+            </div>
+        </div>
+
+        <!-- Spread 5 -->
+        <div class="spread">
+            <div class="left-page">
+                <h2>My/Your Album 🖼️✨</h2>
+                <div class="left-page-images">
+                     <img src="./images/pic5.jpg">
+                     <img src="./images/pic19.jpg">
+                     <img src="./images/pic21.jpg">
+                     <img src="./images/pic13.jpg">
+                </div>
+            </div>
+            <div class="right-page">
+                    <img src="./images/pic20.jpg">
+                    <img src="./images/pic1.jpg">
+                    <img src="./images/pic17.jpg">
+                    <img src="./images/pic7.jpg">
+            </div>
+        </div>
+
+        <!-- Spread 6 -->
+        <div class="spread">
+            <div class="left-page">
+                <h2>A Small Message 💌✍️</h2>
+                <p>Hum promise karte hai hum humesha apna dhyan denge 🤗.</p>
+                <p>Hum promise karte hai hum tumhara humesha khayal rakhenge 💗.</p>
+                <p>Hum promise karte hai tumse kitna bhi gussa ho jaye hum tumse baat karenge 🤝.</p>
+                <p>Hum promise karte hai hum tumse bahot pyaar karenge meri Khushi ❣️.</p>
+                <p>Hum promise karte hai ki mere rehte tumhari aankho me kabhi aansu nahi aane denge 💖.</p>
+            </div>
+            <div class="right-page">
+                    <img src="./images/draw1.jpg">
+                    <img src="./images/draw4.jpg">
+                    <img src="./images/draw3.jpg">
+                    <img src="./images/draw2.jpg">
+            </div>
+        </div>
+
+        <!-- Spread 7 -->
+        <div class="spread">
+            <div class="left-page">
+                <h2>Forever & Always 💖</h2>
+                <p>Agla janam mila toh usme bhi sirf tumhare bestfriend banna chahenge 💌.</p>
+                <p>Phirse tumhara haath pakadna chahenge 💝.</p>
+                <p> Phirse tumhara saath rehna chahenge 💌.</p>
+                <p>Phirse tumse pyaar karna chahenge 💖♾️, lekin iss bar sirf tumse hi...</p>
+                <p>Agla janam mila toh usme tumhara dil nahi todenge 🥺. </p>
+                <p>Next time tumhara intezaar karenge 💫.</p>
+                <p>Next time sirf tumhare hi Yash rahenge Khushi 💗. </p>
+                <p>Meri Coco ❣️</p>
+            </div>
+            <div class="right-page">
+                <img src="./images/us1.jpg">
+                <img src="./images/us2.jpg">
+                <img src="./images/us3.jpg">
+                <img src="./images/us4.jpg">
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls">
+        <button onclick="closeBook()">⬅ Close</button>
+        <button id="prevBtn" onclick="prevPage()">⬅ Previous</button>
+        <button id="nextBtn" onclick="nextPage()">Next ➡</button>
+    </div>
+</div>
+</div>
+
+<script>
+let current=0;
+const spreads=document.querySelectorAll(".spread");
+const book=document.getElementById("book");
+const cover=document.getElementById("cover");
+const prevBtn=document.getElementById("prevBtn");
+const nextBtn=document.getElementById("nextBtn");
+const pageSound=document.getElementById("pageSound");
+const bgMusic=document.getElementById("bgMusic");
+
+/* OPEN BOOK with Fullscreen */
+function openBook(){
+    // Try to go fullscreen
+    const docElm = document.documentElement;
+    if (docElm.requestFullscreen) {
+        docElm.requestFullscreen();
+    } else if (docElm.mozRequestFullScreen) { /* Firefox */
+        docElm.mozRequestFullScreen();
+    } else if (docElm.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+        docElm.webkitRequestFullscreen();
+    } else if (docElm.msRequestFullscreen) { /* IE/Edge */
+        docElm.msRequestFullscreen();
+    }
+
+    book.classList.add("open");
+    cover.style.pointerEvents="none";
+    updateButtons();
+    launchStars();
+    bgMusic.volume=0.5;  // Background music volume
+    bgMusic.play();
+    showSpread(0);
+}
+
+/* CLOSE BOOK */
+function closeBook(){
+    book.classList.remove("open");
+    cover.style.pointerEvents="auto";
+    current=0;
+    showSpread(current);
+    bgMusic.pause();
+    bgMusic.currentTime=0;
+}
+
+/* PLAY SOUND (with softer volume) */
+function playSound(){ 
+    pageSound.volume = 0.2;  // 🔹 Softer page flip sound
+    pageSound.currentTime=0; 
+    pageSound.play(); 
+}
+
+/* SHOW CURRENT SPREAD */
+function showSpread(index){
+    spreads.forEach((s,i)=>{
+        if(i<index) s.style.transform='rotateY(-180deg)';
+        else if(i>index) s.style.transform='rotateY(180deg)';
+        else s.style.transform='rotateY(0deg)';
+    });
+    updateButtons();
+}
+
+/* NEXT/PREVIOUS */
+function nextPage(){ if(current<spreads.length-1){ current++; playSound(); showSpread(current);} }
+function prevPage(){ if(current>0){ current--; playSound(); showSpread(current);} }
+
+/* BUTTON STATE */
+function updateButtons(){ prevBtn.disabled=current===0; nextBtn.disabled=current===spreads.length-1; }
+
+/* SWIPE MOBILE */
+let startX=0;
+document.querySelector(".book-wrapper").addEventListener("touchstart",e=>startX=e.touches[0].clientX);
+document.querySelector(".book-wrapper").addEventListener("touchend",e=>{
+    let endX=e.changedTouches[0].clientX;
+    if(Math.abs(startX-endX)>50){startX>endX?nextPage():prevPage();}
+});
+
+/* CONFETTI */
+function spawnConfetti(){
+    const colors=['#ff0a54','#ff477e','#ff85a1','#fbb1b1','#f9bec7','#f7cad0','#fae0e4'];
+    const confetti=document.createElement('div');
+    confetti.classList.add('confetti');
+    confetti.style.left=Math.random()*window.innerWidth+'px';
+    confetti.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];
+    confetti.style.width=confetti.style.height=(5+Math.random()*8)+'px';
+    confetti.style.animationDuration=(3+Math.random()*3)+'s';
+    document.body.appendChild(confetti);
+    setTimeout(()=>confetti.remove(),6000);
+}
+setInterval(spawnConfetti,300);
+
+/* STARS */
+function launchStars(){
+    const cake=document.querySelector(".cover img");
+    const rect=cake.getBoundingClientRect();
+    for(let i=0;i<15;i++){
+        const star=document.createElement('div');
+        star.classList.add('star');
+        star.style.left=rect.left+Math.random()*rect.width+'px';
+        star.style.top=rect.top+Math.random()*rect.height+'px';
+        star.style.width=star.style.height=(4+Math.random()*6)+'px';
+        document.body.appendChild(star);
+        setTimeout(()=>star.remove(),4000);
+    }
+}
+</script>
+</body>
+</html>
